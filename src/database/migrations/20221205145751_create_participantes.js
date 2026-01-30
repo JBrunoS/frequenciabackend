@@ -12,6 +12,7 @@
       table.string('ano_nascimento')
       table.boolean('status')
       table.string('faixa')
+      table.string('tipo_programa')
       table.integer('id_projeto').unsigned()
   
       table.foreign('id_projeto').references('id').inTable('projetos')

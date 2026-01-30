@@ -11,4 +11,5 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(routes)
 
-app.listen(process.env.PORT || 21024)
+
+app.listen(process.env.PORT || 3333)

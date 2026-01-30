@@ -1,24 +1,24 @@
 // Update with your config settings.
-
+ 
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
 module.exports = {
-
+ 
   development: {
     client: 'mysql',
     connection: {
-      host: 'mysql.api-frequencia.kinghost.net',
+      host: 'mysql.associacaomaranataamanari.com.br',
       user: 'apifrequencia',
       password: 'Pev12345',
       database: 'apifrequencia'
-
+ 
     },
     migrations: {
       directory: './src/database/migrations'
     }
   },
-
+ 
   staging: {
     client: 'postgresql',
     connection: {
@@ -34,15 +34,15 @@ module.exports = {
       tableName: 'knex_migrations'
     }
   },
-
+ 
   production: {
     client: 'mysql',
     connection: {
-      host: 'mysql.api-frequencia.kinghost.net',
+      host: 'mysql.associacaomaranataamanari.com.br',
       user: 'apifrequencia',
       password: 'Pev12345',
       database: 'apifrequencia'
-
+ 
     },
     ssl: {
       rejectUnauthorized: false
@@ -52,3 +52,4 @@ module.exports = {
     }
   }
 };
+ 

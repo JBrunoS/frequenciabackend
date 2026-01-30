@@ -211,6 +211,25 @@ module.exports = {
         return res.json(frequencia)
     },
 
+    // async getAusentes(req, res) {
+    //     const { id_projeto, nome_turma, mes, ano, dia } = req.params;
+
+    //     const ausentes = await connection('frequencia')
+    //         .select('frequencia.*')
+    //         .count('status as ausentes')
+    //         .where({
+    //             'frequencia.id_projeto': id_projeto,
+    //             'frequencia.nome_turma': nome_turma,
+    //             'frequencia.mes': mes,
+    //             'frequencia.ano': ano,
+    //             'frequencia.dia': dia,
+    //             'frequencia.status': 1
+    //         })
+
+    //         return res.json(ausentes)
+
+    // },
+
     async getFrequenciaPorAluno(req, res) {
         const { id_participante, mes_turma, ano_turma } = req.params
         var array = []
@@ -220,7 +239,8 @@ module.exports = {
             // .leftJoin('turmas', 'participantes.id', 'turmas.id_participante')
             .select('participantes.*', 'turmas.nome as nome_turma', 'turmas.*')
             .where({
-                'turmas.id_participante': id_participante
+                'turmas.id_participante': id_participante,
+                'turmas.ano_turma': ano_turma
             })
 
         const frequencia = await connection('frequencia')
@@ -274,7 +294,7 @@ module.exports = {
 
         const contadorMes = await connection('frequencia')
             .leftJoin('participantes', 'frequencia.id_participante', 'participantes.id')
-            .count('participantes.id')
+            .count('participantes.id as count')
             .where({
                 'frequencia.id_projeto': id_projeto,
                 'frequencia.nome_turma': nome_turma,
@@ -286,7 +306,7 @@ module.exports = {
 
         const contadorDia = await connection('frequencia')
             .leftJoin('participantes', 'frequencia.id_participante', 'participantes.id')
-            .count('participantes.id')
+            .count('participantes.id as count')
             .where({
                 'frequencia.id_projeto': id_projeto,
                 'frequencia.nome_turma': nome_turma,
@@ -350,20 +370,13 @@ module.exports = {
                 'mes': month,
                 'ano': year,
                 'dia': day
-
             })
             .first()
-
-
-
         if (incident) {
             return res.status(204).json()
         } else {
-
             for (let i = 0; i < participantes.length; i++) {
-
                 if (frequencia.indexOf(participantes[i]) > -1) {
-
                     await connection('frequencia')
                         .insert({
                             'id_participante': participantes[i],
@@ -379,10 +392,7 @@ module.exports = {
                             'status': true
                         })
                         .returning('id')
-
                 } else {
-
-
                     await connection('frequencia')
                         .insert({
                             'id_participante': participantes[i],
@@ -400,13 +410,8 @@ module.exports = {
                         .returning('id')
                 }
             }
-
             return res.json('Dados cadastrados com sucesso!')
         }
-
-
-
-
     },
 
     // async getFaltasDeAlunos(req, res) {

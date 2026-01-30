@@ -2,21 +2,20 @@ const connection = require('../database/connection')
 
 module.exports = {
     async index(req, res) {
-        const { id_projeto } = req.params;
+        const { id_projeto, ano_turma } = req.params;
 
         const turmas = await connection('turmas')
             .innerJoin('participantes', 'turmas.id_participante', 'participantes.id')
-            .select('turmas.nome', 'participantes.faixa')
+            .select('turmas.nome')
             .where({
-                'turmas.id_projeto': id_projeto
+                'turmas.id_projeto': id_projeto,
+                'ano_turma': ano_turma
             })
             .orderBy([
                 { column: 'participantes.faixa', order: 'asc' },
                 { column: 'turmas.nome', order: 'asc' }
             ])
-            .groupBy('turmas.nome', 'participantes.faixa')
-
-
+            .groupBy('turmas.nome')
 
         return res.json(turmas)
 
@@ -24,15 +23,17 @@ module.exports = {
 
     async getTotalTurmas(req, res) {
         const { id_projeto } = req.params;
+        
 
         const turmas = await connection('turmas')
             .innerJoin('participantes', 'turmas.id_participante', 'participantes.id')
             .select('turmas.nome')
             .where({
-                'turmas.id_projeto': id_projeto
+                'turmas.id_projeto': id_projeto,
+                'ano_turma': '2025'
             })
-            .orderBy('participantes.faixa', 'asc')
-            .groupBy('turmas.nome', 'participantes.faixa')
+
+            .groupBy('turmas.nome')
 
 
         return res.json(turmas)
@@ -55,12 +56,13 @@ module.exports = {
         return res.json('Dados alterados com sucesso')
     },
 
-    async getParticipanteSemTurma(req, res) {
-        const { id_projeto, nome_turma, faixa } = req.params;
+    async getParticipanteSemTurmaProjeto(req, res) {
+        const { id_projeto, nome_turma, faixa, tipo_programa } = req.params;
 
         const turmas = await connection('participantes')
             .select('*')
             .where('participantes.faixa', '=', faixa)
+            .where('participantes.tipo_programa', '=', tipo_programa)
             .where('participantes.id_projeto', '=', id_projeto)
             .whereNotExists(function () {
                 this.select('*')
@@ -69,7 +71,29 @@ module.exports = {
                     .andWhere('turmas.nome', '=', nome_turma)
                     .andWhere('turmas.id_projeto', '=', id_projeto)
             })
-            
+
+
+        return res.json(turmas)
+
+    },
+
+    async getParticipanteSemTurmaLar(req, res) {
+        const { id_projeto, nome_turma, tipo_programa } = req.params;
+
+        console.log(tipo_programa)
+
+        const turmas = await connection('participantes')
+            .select('*')
+            .where('participantes.tipo_programa', '=', tipo_programa)
+            .where('participantes.id_projeto', '=', id_projeto)
+            .whereNotExists(function () {
+                this.select('*')
+                    .from('turmas')
+                    .whereRaw('turmas.id_participante = participantes.id')
+                    .andWhere('turmas.nome', '=', nome_turma)
+                    .andWhere('turmas.id_projeto', '=', id_projeto)
+            })
+
 
         return res.json(turmas)
 
@@ -88,9 +112,12 @@ module.exports = {
                 'turmas.id_coordenador',
                 'turmas.id_professor',
                 'turmas.turno',
+                'turmas.dias',
+                'turmas.hora',
                 'participantes.nome',
                 'participantes.br',
                 'participantes.faixa',
+                'participantes.tipo_programa',
                 'participantes.mes_nascimento',
                 'participantes.ano_nascimento',
                 'participantes.id as id_participante',
@@ -111,32 +138,15 @@ module.exports = {
     async getTurmaByNameSementinha(req, res) {
         const { id_projeto, nome_turma, turno_turma } = req.params;
 
+        const data = new Date()
 
-
-        // const out = await connection('frequencia')
-        //     .leftJoin('participantes', 'frequencia.id_participante', 'participantes.id')
-        //     .select('frequencia.id_participante', 'participantes.nome', 'participantes.br')
-        //     .count('id_participante')
-        //     .where({
-        //         'frequencia.id_projeto': id_projeto,
-        //         'nome_turma': nome_turma,
-        //         'turno_turma': turno_turma
-
-        //     })
-        //     .whereNotExists(function () {
-        //         this.select('*')
-
-        //             .from('frequencia')
-        //             .whereRaw('frequencia.id_participante = participantes.id')
-        //             .andWhere('frequencia.nome_turma', '=', nome_turma)
-        //             .groupBy('frequencia.id', 'participantes.id')
-        //     })
-        //     .groupBy('frequencia.id', 'participantes.id')
+        const ano = data.getFullYear()
+        const mes = data.getMonth() + 1;
 
         const turmas = await connection('participantes')
             .innerJoin('turmas', 'participantes.id', 'turmas.id_participante')
             .select('participantes.id as id_participante', 'participantes.nome', 'participantes.br')
-            .count('participantes.id')
+            .count('participantes.id as count')
             .where({
                 'turmas.id_projeto': id_projeto,
                 'turmas.nome': nome_turma,
@@ -148,9 +158,12 @@ module.exports = {
                     .from('frequencia')
                     .whereRaw('frequencia.id_participante = participantes.id')
                     .andWhere('frequencia.nome_turma', '=', nome_turma)
+                    .andWhere('frequencia.mes', '=', mes)
+                    .andWhere('frequencia.ano', '=', ano)
                     .groupBy('frequencia.id', 'participantes.id')
 
             })
+            .orderBy('participantes.nome', 'asc')
             .groupBy('participantes.id', 'turmas.id')
 
 
@@ -158,13 +171,16 @@ module.exports = {
         const contagem = await connection('frequencia')
             .leftJoin('participantes', 'frequencia.id_participante', 'participantes.id')
             .select('frequencia.id_participante', 'participantes.nome', 'participantes.br')
-            .count('id_participante')
+            .count('id_participante as count')
             .where({
                 'frequencia.id_projeto': id_projeto,
+                'frequencia.mes': mes,
+                'frequencia.ano': ano,
                 'nome_turma': nome_turma,
                 'turno_turma': turno_turma
 
             })
+            .orderBy('participantes.nome', 'asc')
             .groupBy('id_participante', 'participantes.id')
 
         return res.json([contagem, turmas])
@@ -184,9 +200,13 @@ module.exports = {
                 'turmas.id_coordenador',
                 'turmas.id_professor',
                 'turmas.turno',
+                'turmas.dias',
+                'turmas.hora',
+                'turmas.ano_turma',
                 'participantes.nome',
                 'participantes.br',
                 'participantes.faixa',
+                'participantes.tipo_programa',
                 'participantes.mes_nascimento',
                 'participantes.ano_nascimento',
                 'participantes.id as id_participante',
@@ -221,7 +241,7 @@ module.exports = {
 
 
             const contador = await connection('turmas')
-                .count('id_professor')
+                .count('id_professor as count')
                 .where({
                     'id_professor': parseInt(id_professor),
                     'id_projeto': parseInt(id_projeto),
@@ -233,19 +253,20 @@ module.exports = {
 
 
         }
-        const obj = Object.fromEntries(arrayTurma)
+        // const obj = Object.fromEntries(arrayTurma)
 
         return res.json(arrayTurma)
     },
 
     async getCountManha(req, res) {
-        const { nome_turma } = req.params
+        const { nome_turma, id_projeto } = req.params
 
         const manha = await connection('turmas')
-            .count('nome')
+            .count('nome as count')
             .where({
                 'turno': 'manha',
-                'nome': nome_turma
+                'nome': nome_turma,
+                'id_projeto': id_projeto
             })
             .first()
 
@@ -253,13 +274,14 @@ module.exports = {
     },
 
     async getCountTarde(req, res) {
-        const { nome_turma } = req.params
+        const { nome_turma, id_projeto } = req.params
 
         const tarde = await connection('turmas')
-            .count('nome')
+            .count('nome as count')
             .where({
                 'turno': 'tarde',
-                'nome': nome_turma
+                'nome': nome_turma,
+                'id_projeto': id_projeto
             })
             .first()
 
@@ -273,7 +295,10 @@ module.exports = {
             nome,
             descricao,
             professor,
-            manha
+            manha,
+            dias,
+            hora,
+            ano_turma
         } = req.body;
 
         for (let i = 0; i < manha.length; i++) {
@@ -286,7 +311,10 @@ module.exports = {
                     'id_coordenador': parseInt(coordenador),
                     'id_participante': parseInt(manha[i]),
                     'id_projeto': parseInt(id_projeto),
-                    'turno': 'manha'
+                    'turno': 'manha',
+                    'dias': dias,
+                    'hora': hora,
+                    'ano_turma': ano_turma
                 })
                 .returning('id')
 
@@ -303,20 +331,24 @@ module.exports = {
             descricao,
             professor,
             manha,
-            tarde
+            tarde,
+            dias,
+            hora,
+            ano_turma
         } = req.body;
 
-
+        console.log(ano_turma)
 
         const turma = await connection('turmas')
             .select('*')
             .where({
                 'nome': nome,
+                'ano_turma': ano_turma
             })
             .first()
 
         if (turma) {
-            return res.json('Já existe uma turma com esse nome');
+            return res.json('JÃ¡ existe uma turma com esse nome');
         } else {
 
             for (let i = 0; i < manha.length; i++) {
@@ -325,11 +357,14 @@ module.exports = {
                     .insert({
                         'nome': nome,
                         'descricao': descricao,
+                        'dias': dias,
+                        'hora': hora,
                         'id_professor': parseInt(professor),
                         'id_coordenador': parseInt(coordenador),
                         'id_participante': parseInt(manha[i]),
                         'id_projeto': parseInt(id_projeto),
-                        'turno': 'manha'
+                        'turno': 'manha',
+                        'ano_turma': ano_turma
                     })
                     .returning('id')
 
@@ -341,11 +376,14 @@ module.exports = {
                     .insert({
                         'nome': nome,
                         'descricao': descricao,
+                        'dias': dias,
+                        'hora': hora,
                         'id_professor': parseInt(professor),
                         'id_coordenador': parseInt(coordenador),
                         'id_participante': parseInt(tarde[i]),
                         'id_projeto': parseInt(id_projeto),
-                        'turno': 'tarde'
+                        'turno': 'tarde',
+                        'ano_turma': ano_turma
                     })
                     .returning('id')
 
@@ -369,7 +407,7 @@ module.exports = {
             })
             .delete()
 
-        return res.json('Excluído com sucesso!')
+        return res.json('ExcluÃ­do com sucesso!')
     },
 
     async alterTurma(req, res) {
@@ -377,19 +415,35 @@ module.exports = {
             nome_antigo,
             nome_novo,
             descricao,
+            dias,
+            hora,
             id_professor,
             id_projeto,
+            ano_turma
         } = req.body
 
         await connection('turmas')
             .where({
                 'nome': nome_antigo,
-                'id_projeto': id_projeto
+                'id_projeto': id_projeto,
+                'ano_turma': ano_turma
             })
             .update({
                 'nome': nome_novo,
                 'descricao': descricao,
+                'dias': dias,
+                'hora': hora,
                 'id_professor': parseInt(id_professor),
+            })
+
+        await connection('frequencia')
+            .where({
+                'nome_turma': nome_antigo,
+                'id_projeto': id_projeto,
+                'ano': ano_turma
+            })
+            .update({
+                'nome_turma': nome_novo
             })
 
         return res.json('Dados alterados com sucesso')
