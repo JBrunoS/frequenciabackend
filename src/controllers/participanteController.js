@@ -37,7 +37,6 @@ module.exports = {
 
     async descontaPapagaio(req, res){
        const { id, valor} = req.body
-       console.log(req.body)
 
        await connection('participantes')
            .whrere({

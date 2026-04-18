@@ -23,6 +23,7 @@ module.exports = {
 
     async getTotalTurmas(req, res) {
         const { id_projeto } = req.params;
+        const anoAtual = new Date().getFullYear()
         
 
         const turmas = await connection('turmas')
@@ -30,7 +31,7 @@ module.exports = {
             .select('turmas.nome')
             .where({
                 'turmas.id_projeto': id_projeto,
-                'ano_turma': '2025'
+                'ano_turma': anoAtual
             })
 
             .groupBy('turmas.nome')
@@ -79,8 +80,6 @@ module.exports = {
 
     async getParticipanteSemTurmaLar(req, res) {
         const { id_projeto, nome_turma, tipo_programa } = req.params;
-
-        console.log(tipo_programa)
 
         const turmas = await connection('participantes')
             .select('*')
@@ -336,8 +335,6 @@ module.exports = {
             hora,
             ano_turma
         } = req.body;
-
-        console.log(ano_turma)
 
         const turma = await connection('turmas')
             .select('*')

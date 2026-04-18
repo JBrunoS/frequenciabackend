@@ -8,11 +8,43 @@ module.exports = {
       return res.status(400).json({ error: "id_projeto é obrigatório" });
     }
 
-    const solicitacoes = await connection("solicitacoes")
-      .where("id_projeto", id_projeto)
-      .orderBy("data_criacao", "desc"); // ou data_criacao
+    const dados = await connection("atividades as a")
+      .join("solicitacoes as s", "s.atividade_id", "a.id")
+      .where("s.id_projeto", id_projeto)
+      .select("a.id as atividade_id", "a.nome", "a.area", "a.mes_realizacao", "a.ano_realizacao", "s.*")
+      .orderBy("a.nome");
 
-    return res.json(solicitacoes);
+    // 🔥 AGRUPAR POR ATIVIDADE
+    const resultado = [];
+
+    dados.forEach((row) => {
+      let atividade = resultado.find(
+        (a) => a.atividade_id === row.atividade_id,
+      );
+
+      if (!atividade) {
+        atividade = {
+          atividade_id: row.atividade_id,
+          nome: row.nome,
+          area: row.area,
+          mes_realizacao: row.mes_realizacao,
+          ano_realizacao: row.ano_realizacao,
+          solicitacoes: [],
+        };
+        resultado.push(atividade);
+      }
+
+      atividade.solicitacoes.push({
+        id: row.id,
+        titulo: row.titulo,
+        descricao: row.descricao,
+        status: row.status,
+        etapa_atual: row.etapa_atual,
+        data_criacao: row.data_criacao,
+      });
+    });
+
+    return res.json(resultado);
   },
 
   async show(req, res) {
@@ -25,8 +57,19 @@ module.exports = {
       });
     }
 
-    const solicitacao = await connection("solicitacoes")
-      .where({ id, id_projeto })
+    const solicitacao = await connection("solicitacoes as s")
+      .leftJoin("atividades as a", "a.id", "s.atividade_id")
+      .where("s.id", id)
+      .where("s.id_projeto", id_projeto)
+      .select(
+        "s.*",
+        "a.nome as atividade_nome",
+        "a.descricao as atividade_descricao",
+        "a.custo as atividade_custo",
+        "a.area as atividade_area",
+        "a.mes_realizacao as atividade_mes",
+        "a.ano_realizacao as atividade_ano",
+      )
       .first();
 
     if (!solicitacao) {
@@ -104,35 +147,35 @@ module.exports = {
 
   async getAll(req, res) {
     const { id } = req.params;
-  
+
     // Buscar solicitação
-    const solicitacao = await connection('solicitacoes')
-      .where('id', id)
+    const solicitacao = await connection("solicitacoes")
+      .where("id", id)
       .first();
-    
+
     if (!solicitacao) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Solicitação não encontrada' 
+      return res.status(404).json({
+        success: false,
+        error: "Solicitação não encontrada",
       });
     }
 
     // Buscar itens
-    const itens = await connection('solicitacao_itens')
-      .where('solicitacao_id', id)
-      .select('*');
+    const itens = await connection("solicitacao_itens")
+      .where("solicitacao_id", id)
+      .select("*");
 
     // Buscar aprovações
-    const aprovacoes = await connection('aprovacoes')
-      .where('solicitacao_id', id)
-      .select('*')
-      .orderBy('data_decisao', 'asc');
+    const aprovacoes = await connection("aprovacoes")
+      .where("solicitacao_id", id)
+      .select("*")
+      .orderBy("data_decisao", "asc");
 
     // Buscar timeline
-    const timeline = await connection('solicitacao_timeline')
-      .where('solicitacao_id', id)
-      .select('*')
-      .orderBy('data_hora', 'asc');
+    const timeline = await connection("solicitacao_timeline")
+      .where("solicitacao_id", id)
+      .select("*")
+      .orderBy("data_hora", "asc");
 
     return res.json({
       success: true,
@@ -140,8 +183,8 @@ module.exports = {
         solicitacao,
         itens,
         aprovacoes,
-        timeline
-      }
+        timeline,
+      },
     });
   },
 };

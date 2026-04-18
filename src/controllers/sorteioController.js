@@ -112,8 +112,6 @@ module.exports = {
     async getTotalPontosVendedores(req, res) {
         const { id_projeto, status } = req.params;
 
-        console.log(req.params)
-
         const professores = await connection('professor')
             .leftJoin('sorteios', 'professor.nome', 'sorteios.nome_professor')
             .select('professor.nome', 'sorteios.*')
@@ -144,8 +142,6 @@ module.exports = {
         } = req.body;
 
         const vendidos = []
-
-        console.log(req.body)
 
 
         for (let i = 0; i < pontos; i++) {

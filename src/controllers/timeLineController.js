@@ -25,8 +25,6 @@ module.exports = {
         .where({ id: solicitacao_id}, { id_projeto }) 
         .first()
 
-    console.log(solicitacao)
-
     await connection('solicitacao_timeline').insert({
       id_projeto: id_projeto,
       solicitacao_id: solicitacao_id,
