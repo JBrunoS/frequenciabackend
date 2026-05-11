@@ -223,4 +223,28 @@ async listarPendentes(req, res) {
     });
   }
 },
+async saldo(req, res) {
+  try {
+    const { atividade_id } = req.params;
+    const { id_projeto } = req.query;
+ 
+    console.log("atividade_id:", atividade_id);
+    console.log("id_projeto:", id_projeto);
+ 
+    const resultado = await knex("solicitacoes")
+      .where({ atividade_id: Number(atividade_id), id_projeto: Number(id_projeto) })
+      .whereNotIn("status", ["RECUSADO"])
+      .sum("valor_total as total_solicitado")
+      .first();
+ 
+    console.log("resultado:", resultado);
+ 
+    const total_solicitado = Number(resultado.total_solicitado) || 0;
+ 
+    return res.json({ total_solicitado });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Erro ao buscar saldo da atividade" });
+  }
+},
 };

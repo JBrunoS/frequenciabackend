@@ -14,14 +14,14 @@ module.exports = {
  
         return res.json(participantes)
     },
-
+ 
     async editaSaldoParticipante(req, res) {
         const {
             frequencia,
             participantes,
             valor
         } = req.body
-
+ 
         for (let i = 0; i < frequencia.length; i++) {
             await connection('participantes')
                 .where({
@@ -31,21 +31,21 @@ module.exports = {
                     'saldo': valor
                 })
         }
-
+ 
         return res.json('Dados cadastrados com sucesso!')
     },
-
+ 
     async descontaPapagaio(req, res){
        const { id, valor} = req.body
-
+ 
        await connection('participantes')
-           .whrere({
+           .where({
                 'id': id
            })
            .decrement({
                'saldo': valor
            })
-
+ 
        return res.json('Valor descontado do saldo do participante')
     },
    
@@ -112,7 +112,7 @@ module.exports = {
             .first();
  
         if (participante) {
-            return res.json("Participante jÃ¡ cadastrado no sistema")
+            return res.json("Participante jÃƒÂ¡ cadastrado no sistema")
         } else {
             const novo = await connection('participantes')
                 .insert({
@@ -191,6 +191,7 @@ module.exports = {
             faixa,
             tipo_programa,
             id_projeto } = req.body
+       try{
  
         await connection('participantes')
         .where({'id': id})
@@ -207,17 +208,20 @@ module.exports = {
         })
  
         return res.json('Dados alterados com sucesso!')
+      } catch (error) {
+        return res.json('Não foi possível alterar os dados')
+      }
     },
-
+ 
     async updateFaixa(req, res){
         const {id_user, id_projeto, faixa} = req.params
-
+ 
         await connection('participantes')
         .where({'id': id_user, 'id_projeto': id_projeto})
         .update({
             'faixa': faixa
         })
-
-        return res.json('Grupo etário alterado!')
+ 
+        return res.json('Grupo etÃ¡rio alterado!')
     }
 }

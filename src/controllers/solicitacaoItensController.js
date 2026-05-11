@@ -7,7 +7,7 @@ module.exports = {
 
     if (!itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({
-        error: "Itens são obrigatórios",
+        error: "Itens sÃ£o obrigatÃ³rios",
       });
     }
 

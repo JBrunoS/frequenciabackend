@@ -1,5 +1,5 @@
 const express = require("express");
- 
+
 const projetoController = require("./controllers/projetoController");
 const participanteController = require("./controllers/participanteController");
 const professorController = require("./controllers/professorController");
@@ -14,13 +14,13 @@ const solicitacaoController = require("./controllers/solicitacaoController");
 const atividadeController = require("./controllers/atividadeController");
 // routes.js
 const PDFController = require("./controllers/PDFController");
- 
+
 const routes = express.Router();
- 
+
 routes.get("/projetos", projetoController.index);
 routes.post("/login/projetos", projetoController.getLogin);
 routes.post("/projetos", projetoController.create);
- 
+
 routes.get("/participantes/:id_projeto", participanteController.index);
 routes.get("/participantes/app/:id_projeto", participanteController.getApp);
 routes.get("/participante/:id_user", participanteController.getById);
@@ -44,7 +44,25 @@ routes.put(
   participanteController.editaSaldoParticipante,
 );
 routes.put("/desconta/papagaio", participanteController.descontaPapagaio);
- 
+
+routes.get(
+  "/professores/todos/:id_projeto/:status",
+  professorController.getTodos,
+);
+routes.get(
+  "/professor/:id_professor/projetos",
+  professorController.getProjetosProfessor,
+);
+routes.get(
+  "/professores/projeto/:id_projeto",
+  professorController.getProfessoresPorProjeto,
+);
+routes.post("/professores/vincular", professorController.vincularProfessor);
+routes.delete(
+  "/professores/desvincular/:id_professor/:id_projeto",
+  professorController.desvincular,
+);
+
 routes.get("/professores/:id_projeto/:status", professorController.index);
 routes.get(
   "/professores_ativos/:id_projeto/",
@@ -55,10 +73,10 @@ routes.post("/professores", professorController.create);
 routes.put("/edit/professor/:id_professor", professorController.editProfessor);
 routes.get("/coordenador/:id_projeto", professorController.getCoordenador);
 routes.post("/professor/login", professorController.getLogin);
- 
+
 routes.get("/total/participantes/:id_projeto", participanteController.getTotal);
 routes.get("/total/turmas/:id_projeto", turmaController.getTotalTurmas);
- 
+
 routes.get("/turmas/:id_projeto/:ano_turma", turmaController.index);
 routes.post("/turmas", turmaController.createTurma);
 routes.get("/tarde/:nome_turma/:id_projeto", turmaController.getCountTarde);
@@ -75,7 +93,7 @@ routes.get(
   "/turma/sementinha/:id_projeto/:nome_turma/:turno_turma",
   turmaController.getTurmaByNameSementinha,
 );
- 
+
 routes.get("/turma/:id_projeto/:nome_turma", turmaController.getTurmaByNameAll);
 routes.get(
   "/participantes/:id_projeto/:nome_turma/:faixa/:tipo_programa",
@@ -92,7 +110,7 @@ routes.delete(
 );
 routes.put("/edit/turno", turmaController.alterTurno);
 routes.put("/edit/turma", turmaController.alterTurma);
- 
+
 routes.get(
   "/geral/frequencia/dias/:id_projeto/:nome_turma/:mes_turma/:ano_turma",
   frequenciaController.getFrequenciaGeralDias,
@@ -141,8 +159,11 @@ routes.get(
 );
 routes.post("/create/frequencia", frequenciaController.createFrequencia);
 routes.put("/edit/frequencia", frequenciaController.editFrequencia);
-routes.get("/dashboard/sem-presenca/:id_projeto/:mes/:ano", frequenciaController.participantesSemPresenca);
- 
+routes.get(
+  "/dashboard/sem-presenca/:id_projeto/:mes/:ano",
+  frequenciaController.participantesSemPresenca,
+);
+
 routes.get("/estoque/:id_projeto/:area", estoqueController.index);
 routes.get("/areas/:id_projeto", estoqueController.getAreas);
 routes.get("/gastos/:id_projeto/:ano/:area", estoqueController.getGastos);
@@ -155,7 +176,7 @@ routes.post(
 );
 routes.post("/baixa-estoque/:id_projeto", estoqueController.baixaEstoque);
 routes.post("/create-report/:id_projeto", estoqueController.createRelatorio);
- 
+
 routes.post("/create/sorteio", sorteioController.createPonto);
 routes.get("/total/sorteio", sorteioController.getTotalPontos);
 routes.get(
@@ -170,32 +191,39 @@ routes.get(
 routes.get("/compras/:id_professor/:nome", sorteioController.getPontos);
 routes.get("/pessoa/:id_professor/:nome", sorteioController.getPontosPessoa);
 routes.put("/pessoa/edit/:id_professor/:nome", sorteioController.editStatus);
- 
+
 routes.post("/solicitacoes", solicitacaoController.create);
 routes.get("/solicitacoes", solicitacaoController.index);
-routes.get("/solicitacoes/:id", solicitacaoController.show);
+routes.get("/solicitacoes/:id/:idProjeto", solicitacaoController.show);
 routes.get("/solicitacoes/:id/completa", solicitacaoController.getAll);
- 
+
 routes.post("/solicitacao/:id/itens", solicitacaoItensController.create);
 routes.get(
   "/solicitacao-itens/:solicitacao_id",
   solicitacaoItensController.index,
 );
- 
+
 routes.post("/aprovacoes", aprovacaoController.create);
 routes.get("/aprovacoes/:solicitacao_id", aprovacaoController.index);
- 
+
 routes.get("/timeline/:solicitacao_id", timeLineController.index);
 routes.post("/timeline", timeLineController.create);
- 
+
+routes.get("/atividades/saldo/:atividade_id", atividadeController.saldo);
 routes.post("/atividades/:id_projeto", atividadeController.create);
 routes.get("/atividades/:id_projeto/:ano", atividadeController.index);
 routes.get("/atividades/:id_projeto/item/:id", atividadeController.show);
-routes.put("/atividades/:id_projeto/:id/status", atividadeController.updateStatus);
+routes.put(
+  "/atividades/:id_projeto/:id/status",
+  atividadeController.updateStatus,
+);
 routes.put("/atividades/:id_projeto/:id", atividadeController.update);
 routes.delete("/atividades/delete/:id_projeto/:id", atividadeController.delete);
-routes.get("/atividades-pendentes/:id_projeto", atividadeController.listarPendentes);
- 
-routes.get("/solicitacoes/:solicitacao_id/pdf", PDFController.gerar);
- 
+routes.get(
+  "/atividades-pendentes/:id_projeto",
+  atividadeController.listarPendentes,
+);
+
+routes.get("/pdf/solicitacoes/:solicitacao_id", PDFController.gerar);
+
 module.exports = routes;
